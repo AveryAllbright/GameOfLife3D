@@ -2,10 +2,11 @@
 
 let w = window.innerWidth;
 let h = window.innerHeight;
-let con1 = 5;
-let con2 = 9;
+let con1 = 0;
+let con2 = 30;
 let con3 = 4;
 
+let grid = 6;
 
 
 function rand(min, max) {
@@ -58,9 +59,9 @@ let cubeGroup = new THREE.Group();
 let cubes = [];
 let nextGen = [];
 
-for (let x = -5; x < 5; x++) {
-    for (let y = -5; y < 5; y++) {
-        for (let z = -5; z < 5; z++) {
+for (let x = 0; x < grid; x++) {
+    for (let y = 0; y < grid; y++) {
+        for (let z = 0; z < grid; z++) {
             let geometry = new THREE.BoxGeometry(1, 1, 1);
             let material = new THREE.MeshLambertMaterial({
                 color: 0x0066ff
@@ -84,7 +85,7 @@ nextGen = cubes;
 
 
 for (let i = 0; i < cubes.length; i++) {
-    if (Math.random() < .375) {
+    if (Math.random() < -.375) {
         cubes[i].live = false;
     }
 }
@@ -112,11 +113,17 @@ function draw(t) {
     cubeGroup.rotation.x = Math.sin(t / 2000);
     cubeGroup.rotation.y = Math.sin(t / 3000);
 
-
+    let count = 0;
 
     for (let i = 0; i < cubes.length; i++) {
         let c = cubes[i];
-        c.live = ProcessRule(c);
+
+        if (c.live) {
+            count++;
+        }
+
+        c.live = ProcessRule(c, i);
+
 
         if (c.live) {
 
@@ -130,7 +137,10 @@ function draw(t) {
             c.mesh.position.set(x, y, z);
         }
     }
-    // cube.scale.set(v,v,v)
+
+    console.log(count);
+    count = 0;
+
 
     renderer.render(scene, camera);
 
@@ -140,24 +150,92 @@ function draw(t) {
 requestAnimationFrame(draw);
 
 
-function ProcessRule(cell) {
+function ProcessRule(c, i) {
     let liveNeighbours = 0;
-    let index = c.home;
+    let index = i;
 
     //TODO : Calc Neighbours
 
+    //index = xCord + (yCord * maxX) + (zCord * maxX *maxY)
+    //Inverse : 
+    //xCord = i % maxX
+    //yCord = (i / maxX) % maxY
+    //zCord = i / (maxX * maxY)
+
+    //Processing neighbours 
+    //Process index as (x,y,z)
+    //process:
+    // (x-1,y, z), (x+1, y, z), (x, y, z-1), (x, y,z+1), 
+    // (x-1, y, z-1), (x-1, y, z+1), (x+1, y, z-1), (x+1, y, z+1) 
+
+    // (x-1,y+1, z), (x+1, y+1, z), (x, y+1, z-1), (x, y+1,z+1), 
+    // (x-1, y+1, z-1), (x-1, y+1, z+1), (x+1, y+1, z-1), (x+1, y+1, z+1) 
+
+    // (x-1,y-1, z), (x+1, y-1, z), (x, y-1, z-1), (x, y-1,z+1), 
+    // (x-1, y-1, z-1), (x-1, y-1, z+1), (x+1, y-1, z-1), (x+1, y-1, z+1)
+
+    //(x, y-1, z), (x, y+1, z)
+
+
+
+
+
+    //Get Index Coords
+    let x, y, z;
+    x = c.home.x;
+    y = c.home.y;
+    z = c.home.z;
+
+    let xCord, yCord, zCord;
+
+    //Loop through all 26 neighbours
+    for (let i = -1; i <= 1; i++) {
+        for (let j = -1; j <= 1; j++) {
+            for (let k = -1; k <= 1; k++) {
+
+                xCord = x + i;
+                yCord = y + j;
+                zCord = z + k;
+
+                if (xCord == grid) {
+                    xCord = 0;
+                } else if (xCord == -1) {
+                    xCord = grid - 1;
+                }
+
+                if (yCord == grid) {
+                    yCord = 0;
+                } else if (yCord == -1) {
+                    yCord = grid - 1;
+                }
+
+                if (zCord == grid) {
+                    zCord = 0;
+                } else if (zCord == -1) {
+                    zCord = grid - 1;
+                }
+
+                let neighbourIndex = xCord + (yCord * grid) + (zCord * grid * grid);
+                if (cubes[neighbourIndex].live == true && neighbourIndex != index) {
+                    liveNeighbours++;
+                }
+            }
+        }
+    }
+
+    //console.log(liveNeighbours);
+    //if(c.live){console.log("er");}
 
     //Process
 
     if (c.live) {
-        if (liveNeighbours < con1 || liveNeighbours > con2) {
-            c.live = false;
+        if (liveNeighbours < 0 || liveNeighbours > 30) {
+            return false;
         }
     } else {
         if (liveNeighbours == con3)
-            c.live = true;
+            return true;
     }
-
-
-
+    
+    return true;
 }
