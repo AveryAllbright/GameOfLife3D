@@ -32,7 +32,8 @@ scene.background = new THREE.Color(0x000066)
 // The parameters here are fov (field of view angle), aspect ratio, 
 // distance of the near plane, and distance of the far plane
 let camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-camera.position.z = 45;
+camera.position.z = 55;
+camera.position.x += 15;
 
 // let's add the renderer's domElement to the body at run-time
 document.body.appendChild(renderer.domElement);
@@ -57,7 +58,6 @@ scene.add(light);
 
 let cubeGroup = new THREE.Group();
 let cubes = [];
-let nextGen = [];
 
 for (let x = 0; x < grid; x++) {
     for (let y = 0; y < grid; y++) {
@@ -72,7 +72,7 @@ for (let x = 0; x < grid; x++) {
             cubes.push({
                 mesh: cube,
                 home: new THREE.Vector3(x, y, z),
-                move: new THREE.Vector3(x, y, z).multiplyScalar(1 / 2),
+                move: new THREE.Vector3(x, y, z).multiplyScalar(1 / .3),
                 live: true
             })
         }
@@ -85,7 +85,7 @@ nextGen = cubes;
 
 
 for (let i = 0; i < cubes.length; i++) {
-    if (Math.random() < -.375) {
+    if (Math.random() < .375) {
         cubes[i].live = false;
     }
 }
@@ -110,18 +110,18 @@ window.addEventListener('resize', updateCanvasSize);
 
 function draw(t) {
 
-    cubeGroup.rotation.x = Math.sin(t / 2000);
-    cubeGroup.rotation.y = Math.sin(t / 3000);
+    
+       
+    cubeGroup.rotation.x = Math.sin(t / 8000);
+    cubeGroup.rotation.y = Math.sin(t / 12000);
+    
 
     let count = 0;
 
     for (let i = 0; i < cubes.length; i++) {
         let c = cubes[i];
 
-        if (c.live) {
-            count++;
-        }
-
+        
         c.live = ProcessRule(c, i);
 
 
@@ -135,10 +135,17 @@ function draw(t) {
             let z = c.home.z + c.move.z // * v;
 
             c.mesh.position.set(x, y, z);
+            c.mesh.scale.set(1,1,1);
+        }
+        else
+        {
+            c.mesh.scale.set(0.001,0.001,0.001);
         }
     }
+    
+   
 
-    console.log(count);
+    
     count = 0;
 
 
@@ -223,19 +230,19 @@ function ProcessRule(c, i) {
         }
     }
 
-    //console.log(liveNeighbours);
-    //if(c.live){console.log("er");}
+    
 
     //Process
-
+    
+    
     if (c.live) {
-        if (liveNeighbours < 0 || liveNeighbours > 30) {
+        if (liveNeighbours < 10 || liveNeighbours > 21) {
             return false;
         }
+        else return true;
     } else {
-        if (liveNeighbours == con3)
+        if (liveNeighbours < 10 || liveNeighbours > 21)
             return true;
+        else return false;
     }
-    
-    return true;
 }
