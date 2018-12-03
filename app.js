@@ -6,7 +6,8 @@ let con1 = 0;
 let con2 = 30;
 let con3 = 4;
 
-let grid = 6;
+let grid = 15;
+let cyclic = true;
 
 
 function rand(min, max) {
@@ -32,7 +33,7 @@ scene.background = new THREE.Color(0x000066)
 // The parameters here are fov (field of view angle), aspect ratio, 
 // distance of the near plane, and distance of the far plane
 let camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-camera.position.z = 55;
+camera.position.z = 105;
 camera.position.x += 15;
 
 // let's add the renderer's domElement to the body at run-time
@@ -72,7 +73,7 @@ for (let x = 0; x < grid; x++) {
             cubes.push({
                 mesh: cube,
                 home: new THREE.Vector3(x, y, z),
-                move: new THREE.Vector3(x, y, z).multiplyScalar(1 / .3),
+                move: new THREE.Vector3(x, y, z).multiplyScalar(1 / .7),
                 live: true
             })
         }
@@ -85,7 +86,7 @@ nextGen = cubes;
 
 
 for (let i = 0; i < cubes.length; i++) {
-    if (Math.random() < .375) {
+    if (Math.random() < 1.1) {
         cubes[i].live = false;
     }
 }
@@ -110,18 +111,18 @@ window.addEventListener('resize', updateCanvasSize);
 
 function draw(t) {
 
-    
-       
+
+
     cubeGroup.rotation.x = Math.sin(t / 8000);
     cubeGroup.rotation.y = Math.sin(t / 12000);
-    
+
 
     let count = 0;
 
     for (let i = 0; i < cubes.length; i++) {
         let c = cubes[i];
 
-        
+
         c.live = ProcessRule(c, i);
 
 
@@ -135,17 +136,15 @@ function draw(t) {
             let z = c.home.z + c.move.z // * v;
 
             c.mesh.position.set(x, y, z);
-            c.mesh.scale.set(1,1,1);
-        }
-        else
-        {
-            c.mesh.scale.set(0.001,0.001,0.001);
+            c.mesh.scale.set(1, 1, 1);
+        } else {
+            c.mesh.scale.set(0.001, 0.001, 0.001);
         }
     }
-    
-   
 
-    
+
+
+
     count = 0;
 
 
@@ -195,53 +194,87 @@ function ProcessRule(c, i) {
 
     let xCord, yCord, zCord;
 
-    //Loop through all 26 neighbours
-    for (let i = -1; i <= 1; i++) {
-        for (let j = -1; j <= 1; j++) {
-            for (let k = -1; k <= 1; k++) {
+    if (cyclic) {
 
-                xCord = x + i;
-                yCord = y + j;
-                zCord = z + k;
+        //Loop through all 26 neighbours
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                for (let k = -1; k <= 1; k++) {
 
-                if (xCord == grid) {
-                    xCord = 0;
-                } else if (xCord == -1) {
-                    xCord = grid - 1;
+                    xCord = x + i;
+                    yCord = y + j;
+                    zCord = z + k;
+
+                    if (xCord == grid) {
+                        xCord = 0;
+                    } else if (xCord == -1) {
+                        xCord = grid - 1;
+                    }
+
+                    if (yCord == grid) {
+                        yCord = 0;
+                    } else if (yCord == -1) {
+                        yCord = grid - 1;
+                    }
+
+                    if (zCord == grid) {
+                        zCord = 0;
+                    } else if (zCord == -1) {
+                        zCord = grid - 1;
+                    }
+
+                    let neighbourIndex = xCord + (yCord * grid) + (zCord * grid * grid);
+                    if (cubes[neighbourIndex].live == true && neighbourIndex != index) {
+                        liveNeighbours++;
+                    }
                 }
+            }
+        }
+    } else {
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                for (let k = -1; k <= 1; k++) {
 
-                if (yCord == grid) {
-                    yCord = 0;
-                } else if (yCord == -1) {
-                    yCord = grid - 1;
-                }
+                    xCord = x + i;
+                    yCord = y + j;
+                    zCord = z + k;
 
-                if (zCord == grid) {
-                    zCord = 0;
-                } else if (zCord == -1) {
-                    zCord = grid - 1;
-                }
+                    if (xCord - 1 >= 0 && y - 1 >= 0 && z - 1 >= 0) {
+                        let neighbourIndex = xCord + (yCord * grid) + (zCord * grid * grid);
+                        if (cubes[neighbourIndex].live == true && neighbourIndex != index) {
+                            liveNeighbours++;
+                        }
+                    }
 
-                let neighbourIndex = xCord + (yCord * grid) + (zCord * grid * grid);
-                if (cubes[neighbourIndex].live == true && neighbourIndex != index) {
-                    liveNeighbours++;
+                    if (yCord - 1 >= 0 && yCord + 1 <= grid && zCord - 1 >= 0 && zCord + 1 <= grid) {
+                        let neighbourIndex = xCord + (yCord * grid) + (zCord * grid * grid);
+                        if (cubes[neighbourIndex].live == true && neighbourIndex != index) {
+                            liveNeighbours++;
+                        }
+                    }
+
+                    if (xCord + 1 < grid && yCord + 1 < grid && zCord + 1 < grid) {
+                        let neighbourIndex = xCord + (yCord * grid) + (zCord * grid * grid);
+                        if (cubes[neighbourIndex].live == true && neighbourIndex != index) {
+                            liveNeighbours++;
+                        }
+                    }
                 }
             }
         }
     }
 
-    
+
 
     //Process
-    
-    
+
+
     if (c.live) {
-        if (liveNeighbours < 10 || liveNeighbours > 21) {
+        if (liveNeighbours < 5 || liveNeighbours > 7) {
             return false;
-        }
-        else return true;
+        } else return true;
     } else {
-        if (liveNeighbours < 10 || liveNeighbours > 21)
+        if (liveNeighbours >= 6 || liveNeighbours <= 6)
             return true;
         else return false;
     }
