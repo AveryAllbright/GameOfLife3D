@@ -2,13 +2,16 @@
 
 let w = window.innerWidth;
 let h = window.innerHeight;
-let con1 = 0;
-let con2 = 30;
-let con3 = 4;
+let EnviroL = 10;
+let EnviroU = 21;
+let FertL = 10;
+let FertU = 21;
 
-let grid = 15;
+let grid = 17;
 let cyclic = true;
-
+let process = 12;
+let count = process;
+let loop = 1;
 
 function rand(min, max) {
     return min + Math.random() * (max - min);
@@ -25,7 +28,7 @@ let renderer = new THREE.WebGLRenderer();
 // Our Scene object holds our scene graph with everything we want to render
 // e.g., meshes, lights, cameras, etc.
 let scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000066)
+scene.background = new THREE.Color(0xBEEEE5)
 
 // Controls the view frustrum:
 // https://en.wikipedia.org/wiki/Viewing_frustum
@@ -33,7 +36,7 @@ scene.background = new THREE.Color(0x000066)
 // The parameters here are fov (field of view angle), aspect ratio, 
 // distance of the near plane, and distance of the far plane
 let camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-camera.position.z = 105;
+camera.position.z = 75;
 camera.position.x += 15;
 
 // let's add the renderer's domElement to the body at run-time
@@ -41,11 +44,12 @@ document.body.appendChild(renderer.domElement);
 
 // LIGHTS
 // global illumination using a low intensity white color
-let ambient = new THREE.AmbientLight(0x606060);
+let ambient = new THREE.AmbientLight(0xFAAAAA);
 scene.add(ambient);
 
-let light = new THREE.PointLight(0xffffff, 1, 100);
-light.position.set(1, 2, 50);
+let light = new THREE.PointLight(0xFAAAAA, 1, 100);
+light.position.set(5
+                   -5, 2, 50);
 scene.add(light);
 
 // var hemiLight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
@@ -65,7 +69,7 @@ for (let x = 0; x < grid; x++) {
         for (let z = 0; z < grid; z++) {
             let geometry = new THREE.BoxGeometry(1, 1, 1);
             let material = new THREE.MeshLambertMaterial({
-                color: 0x0066ff
+                color: 0xEEEEEE
             });
             let cube = new THREE.Mesh(geometry, material);
             cube.position.set(x, y, z);
@@ -73,7 +77,7 @@ for (let x = 0; x < grid; x++) {
             cubes.push({
                 mesh: cube,
                 home: new THREE.Vector3(x, y, z),
-                move: new THREE.Vector3(x, y, z).multiplyScalar(1 / .7),
+                move: new THREE.Vector3(x, y, z).multiplyScalar(1 / 2),
                 live: true
             })
         }
@@ -86,7 +90,7 @@ nextGen = cubes;
 
 
 for (let i = 0; i < cubes.length; i++) {
-    if (Math.random() < 1.1) {
+    if (Math.random() < .1375) {
         cubes[i].live = false;
     }
 }
@@ -112,40 +116,42 @@ window.addEventListener('resize', updateCanvasSize);
 function draw(t) {
 
 
-
-    cubeGroup.rotation.x = Math.sin(t / 8000);
-    cubeGroup.rotation.y = Math.sin(t / 12000);
-
-
-    let count = 0;
-
-    for (let i = 0; i < cubes.length; i++) {
-        let c = cubes[i];
+    
+    cubeGroup.rotation.x = Math.sin(t / 2000);
+    cubeGroup.rotation.y = Math.sin(t / 3000);
+    cubeGroup.rotation.z = Math.cos(t / 1500);
 
 
-        c.live = ProcessRule(c, i);
 
 
-        if (c.live) {
+    if (count >= process) {
 
-            let v = Math.sin(t / 1000 + c.home.x) * 0.5 + 0.5;
-            v *= 2;
 
-            let x = c.home.x + c.move.x // * v;
-            let y = c.home.y + c.move.y // * v;
-            let z = c.home.z + c.move.z // * v;
+        for (let i = 0; i < cubes.length; i++) {
+            let c = cubes[i];
 
-            c.mesh.position.set(x, y, z);
-            c.mesh.scale.set(1, 1, 1);
-        } else {
-            c.mesh.scale.set(0.001, 0.001, 0.001);
+            c.live = ProcessRule(c, i);
+
+            if (c.live) {
+
+                let v = Math.sin(t / 1000 + c.home.x) * 0.5 + 0.5;
+                v *= 2;
+
+                let x = c.home.x + c.move.x // * v;
+                let y = c.home.y + c.move.y // * v;
+                let z = c.home.z + c.move.z // * v;
+
+                c.mesh.position.set(x, y, z);
+                c.mesh.scale.set(1, 1, 1);
+            } else {
+                c.mesh.scale.set(0.001, 0.001, 0.001);
+            }
         }
+        //console.log(count);
+        count = 0;
     }
 
-
-
-
-    count = 0;
+    count++;
 
 
     renderer.render(scene, camera);
@@ -270,11 +276,11 @@ function ProcessRule(c, i) {
 
 
     if (c.live) {
-        if (liveNeighbours < 5 || liveNeighbours > 7) {
+        if (liveNeighbours < EnviroL || liveNeighbours > EnviroU) {
             return false;
         } else return true;
     } else {
-        if (liveNeighbours >= 6 || liveNeighbours <= 6)
+        if (liveNeighbours >= FertL && liveNeighbours <= FertU)
             return true;
         else return false;
     }
