@@ -12,6 +12,7 @@ let cyclic = true;
 let process = 12;
 let count = process;
 let loop = 1;
+let renderer;
 
 function rand(min, max) {
     return min + Math.random() * (max - min);
@@ -23,7 +24,7 @@ function rand(min, max) {
 // Our main renderer. three.js provides a few different renderers,
 // but we'll use the WebGL one here.
 // We use the renderer to render the scene together with a camera object.
-let renderer = new THREE.WebGLRenderer();
+renderer = new THREE.WebGLRenderer();
 
 // Our Scene object holds our scene graph with everything we want to render
 // e.g., meshes, lights, cameras, etc.
@@ -86,7 +87,11 @@ for (let x = 0; x < grid; x++) {
 
 // Add our mesh to the scene
 scene.add(cubeGroup);
-nextGen = cubes;
+
+let composer = new THREE.EffectComposer(renderer);
+
+let renderPass = new THREE.RenderPass(scene, camera);
+composer.addPass(renderPass);
 
 
 for (let i = 0; i < cubes.length; i++) {
