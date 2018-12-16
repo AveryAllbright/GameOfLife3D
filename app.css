@@ -4,8 +4,12 @@ html, body {
   background-color: black;
 }	
 
-#mainCanvas {
-  width: 100vw;
+.myCanvas {
+  width: 0%;
   height: 100vh;
   display: block;
+}
+
+button {
+    display: block;
 }
