@@ -13,3 +13,14 @@ html, body {
 button {
     display: block;
 }
+
+#gui
+{
+    position: absolute;
+
+    left: 0%;
+    top: 0%;
+
+    width: 400px;
+    height: 400px;
+}

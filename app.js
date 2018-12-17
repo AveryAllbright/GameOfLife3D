@@ -1,4 +1,4 @@
-/* Cube Ripple */
+/* Game of Life 3D */
 
 window.onload = function () {
 
@@ -16,6 +16,38 @@ window.onload = function () {
     let loop = 1;
     let renderer;
     let myCanvas = document.getElementById('myCanvas');
+    let afterimagePass;
+    let ambient;
+    let light;
+    
+    let params = {
+        Enable_Post_Proccessing: false,
+        fullGlitch: false,
+        blockColour: 0xBEEEE5,
+        AmbientlightColour: 0xFAAAAA,
+        PointLightColour: 0xFAAAAA,
+        backgroundColour: 0xBEEEE5,
+        DieHigh: EnviroU,
+        DieLow: EnviroL,
+        BornHigh: FertU,
+        BornLow: FertL,
+        rule: 0,
+        rules: [[10, 21, 10, 21],[4,5,5,5],[5,7,6,6],[4,5,2,6],[5,6,5,5],[2,3,3,3]]
+    };
+    
+    let defaults =
+        {
+            def_Block: params.blockColour,
+            def_Ambient: params.AmbientlightColour,
+            def_Point: params.PointLightColour,
+            def_Back: params.backgroundColour,
+            def_DieLow: EnviroL,
+            def_DieHigh: EnviroU,
+            def_BirthLow: FertL,
+            def_BirthHigh: FertU
+        }
+
+
 
     function rand(min, max) {
         return min + Math.random() * (max - min);
@@ -28,17 +60,17 @@ window.onload = function () {
     // but we'll use the WebGL one here.
     // We use the renderer to render the scene together with a camera object.
     renderer = new THREE.WebGLRenderer({
-        canvas : myCanvas,
+        canvas: myCanvas,
         antialias: true
     });
-    
+
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
     // Our Scene object holds our scene graph with everything we want to render
     // e.g., meshes, lights, cameras, etc.
     let scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xBEEEE5)
+    scene.background = new THREE.Color(params.backgroundColour)
 
     // Controls the view frustrum:
     // https://en.wikipedia.org/wiki/Viewing_frustum
@@ -54,16 +86,13 @@ window.onload = function () {
 
     // LIGHTS
     // global illumination using a low intensity white color
-    let ambient = new THREE.AmbientLight(0xFAAAAA);
+    ambient = new THREE.AmbientLight(params.AmbientlightColour);
     scene.add(ambient);
 
-    let light = new THREE.PointLight(0xFAAAAA, 1, 100);
+    light = new THREE.PointLight(params.PointLightColour, 1, 70);
     light.position.set(5 -
         5, 2, 50);
     scene.add(light);
-
-    // var hemiLight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
-    // scene.add(hemiLight);
 
 
     ////GG NO EDIT ^^^
@@ -79,7 +108,7 @@ window.onload = function () {
             for (let z = 0; z < grid; z++) {
                 let geometry = new THREE.BoxGeometry(1, 1, 1);
                 let material = new THREE.MeshLambertMaterial({
-                    color: 0xBEEEE5
+                    color: params.blockColour
                 });
                 let cube = new THREE.Mesh(geometry, material);
                 cube.position.set(x, y, z);
@@ -95,25 +124,31 @@ window.onload = function () {
     }
 
     // Add our mesh to the scene
-    scene.add(cubeGroup);   
-    
+    scene.add(cubeGroup);
+
 
     let composer = new THREE.EffectComposer(renderer);
 
     composer.addPass(new THREE.RenderPass(scene, camera));
-    
+
+
+    afterimagePass = new THREE.AfterimagePass();
+
+    composer.addPass(afterimagePass);
+
     let glitchPass = new THREE.GlitchPass();
     glitchPass.renderToScreen = true;
     composer.addPass(glitchPass);
-        
+
 
     for (let i = 0; i < cubes.length; i++) {
         if (Math.random() < .1375) {
             cubes[i].live = false;
         }
     }
+    
 
-
+    CreateGUI();
 
     /* UTILITY CODE */
 
@@ -137,10 +172,9 @@ window.onload = function () {
 
         cubeGroup.rotation.x = Math.sin(t / 2000);
         cubeGroup.rotation.y = Math.sin(t / 3000);
-        //cubeGroup.rotation.z = Math.cos(t / 1500);
-
-
-
+        
+        console.log(params.DieHigh);
+       
 
         if (count >= process) {
 
@@ -170,10 +204,16 @@ window.onload = function () {
         }
 
         count++;
+        
+        glitchPass.goWild = params.fullGlitch;
 
-
-        composer.render(renderer);
-
+        if (params.Enable_Post_Proccessing) {
+            composer.render(renderer);
+        }
+        else{
+            renderer.render(scene, camera);
+        }
+        
         requestAnimationFrame(draw);
     }
 
@@ -287,17 +327,53 @@ window.onload = function () {
 
 
         //Process
+        
+        
 
 
         if (c.live) {
-            if (liveNeighbours < EnviroL || liveNeighbours > EnviroU) {
+            if (liveNeighbours < params.DieLow || liveNeighbours > params.DieHigh) {
                 return false;
             } else return true;
         } else {
-            if (liveNeighbours >= FertL && liveNeighbours <= FertU)
+            if (liveNeighbours >= params.BornLow && liveNeighbours <= params.BornHigh)
                 return true;
             else return false;
         }
+    }
+    
+    function Update()
+    {
+        light.color.setHex(params.PointLightColour);
+    }
+    
+    function UpdateAsRule()
+    {
+                
+        params.BornLow = params.rules[params.rule][0];
+        params.BornHigh = params.rules[params.rule][1];
+        params.DieLow = params.rules[params.rule][2];
+        params.DieHigh = params.rules[params.rule][3];
+        
+    }
+
+
+    function CreateGUI() {
+        let gui = new dat.GUI({
+            name: "Controls",
+            width: 400
+        });
+        gui.domElement.id = "gui";
+        gui.add(afterimagePass.uniforms["damp"], 'value', 0, 1).step(0.001).name("Afterimage Scale");
+        gui.add(params, 'Enable_Post_Proccessing').name("Post Processing");
+        gui.add(params, 'fullGlitch').name("Glitch Me Sideways");
+        gui.addColor(params, 'PointLightColour').name("Lights").onChange(Update);
+        gui.add(params, 'rule', {Basic: 0, Standard: 1, StandardAlt: 2, Problematic: 3, GoodSoup: 4, Original: 5}).name("Change Ruleset").onChange(UpdateAsRule);
+        gui.add(params, 'DieLow', 0, 17).step(1).name("Death Lower Limit");
+        gui.add(params, 'DieHigh', 0, 17).step(1).name("Death Upper Limit");
+        gui.add(params, 'BornLow', 0, 17).step(1).name("Birth Lower Limit");
+        gui.add(params, 'BornHigh', 0, 17).step(1).name("Birth Lower Limit");
+        
     }
 
 }
